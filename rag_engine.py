@@ -19,7 +19,6 @@ from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
 from PyPDF2 import PdfFileReader
 from io import BytesIO
 import streamlit as st
-from PyPDF2 import PdfReadError
 
 st.set_page_config(page_title="RAG")
 st.title("Retrieval Augmented Generation Engine")
