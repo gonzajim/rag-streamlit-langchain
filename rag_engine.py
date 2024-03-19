@@ -1,11 +1,13 @@
 import os
+from io import BytesIO
+from pathlib import Path
 from pymongo import MongoClient
 from bson.binary import Binary
 import pickle
 import numpy as np
-from pathlib import Path
-import numpy as np
 import faiss
+import streamlit as st
+from PyPDF2 import PdfFileReader
 from langchain.chains import RetrievalQA, ConversationalRetrievalChain
 from langchain_openai import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
@@ -13,13 +15,9 @@ from langchain import OpenAI
 from langchain.llms.openai import OpenAIChat
 from langchain.document_loaders import DirectoryLoader
 from langchain.text_splitter import CharacterTextSplitter
-from langchain.vectorstores import Chroma
-from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
-from PyPDF2 import PdfFileReader
-from io import BytesIO
-import streamlit as st
+from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 st.set_page_config(page_title="RAG")
 st.title("Retrieval Augmented Generation Engine")
@@ -44,22 +42,18 @@ def split_documents(documents):
         texts.extend(text_splitter.split_text(document))
     return texts
 
-
 @st.cache(allow_output_mutation=True)
 def embeddings_on_local_vectordb(texts):
-    embed_model = OpenAIEmbeddings(model="text-embedding-3-large")
-
-    embeddings = embed_model.embed_documents(texts)
-
-    # Convert our list of embeddings to a numpy array
-    embedding_matrix = np.array(embeddings).astype('float32')
-
-    # Define the dimension of your embeddings
-    dimension = embedding_matrix.shape[1]
-
-    # Build the FAISS index
-    index = faiss.IndexFlatL2(dimension)
-    index.add(embedding_matrix)
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+    text_splitter = RecursiveCharacterTextSplitter(
+        chunk_size=500,
+        chunk_overlap=100,
+        length_function=len,
+        is_separator_regex=False,
+        separators=["\n\n", "\n", " ", ""],
+    )
+    source_chunks = text_splitter.split_documents(texts)
+    index = FAISS.from_documents(source_chunks, embeddings)
 
     return index
 
