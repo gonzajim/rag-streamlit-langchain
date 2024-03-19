@@ -53,7 +53,17 @@ def embeddings_on_local_vectordb(texts):
         separators=["\n\n", "\n", " ", ""],
     )
     source_chunks = text_splitter.split_documents(texts)
-    index = faiss.from_documents(source_chunks, embeddings)
+    # Get embeddings for each document
+    doc_embeddings = [embeddings.embed(doc) for doc in source_chunks]
+
+    # Stack embeddings into a matrix
+    embeddings_matrix = np.vstack(doc_embeddings)
+
+    # Create a FAISS index
+    index = faiss.IndexFlatL2(embeddings_matrix.shape[1])
+
+    # Add vectors to the index
+    index.add(embeddings_matrix)
 
     return index
 
