@@ -46,7 +46,7 @@ def split_documents(documents):
 
 def embeddings_on_local_vectordb(texts):
     embeddings = OpenAIEmbeddings()
-    dimension = embeddings.dimension  # Replace with the dimension of your embeddings
+    dimension = 900  # Replace with the dimension of your embeddings
 
     # Initialize a dynamic list to hold our embeddings
     embedding_list = []
