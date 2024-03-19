@@ -37,8 +37,10 @@ def load_documents(doc_files):
     return documents
 
 def split_documents(documents):
-    text_splitter = CharacterTextSplitter(chunk_size=1000, chunk_overlap=0)
-    texts = text_splitter.split_documents(documents)
+    text_splitter = CharacterTextSplitter()
+    texts = []
+    for document in documents:
+        texts.extend(text_splitter.split_text(document))
     return texts
 
 def embeddings_on_local_vectordb(texts):
