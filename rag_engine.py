@@ -4,7 +4,8 @@ from bson.binary import Binary
 import pickle
 import numpy as np
 from pathlib import Path
-
+import numpy as np
+import faiss
 from langchain.chains import RetrievalQA, ConversationalRetrievalChain
 from langchain.embeddings import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
@@ -44,11 +45,24 @@ def split_documents(documents):
     return texts
 
 def embeddings_on_local_vectordb(texts):
-    vectordb = Chroma.from_documents(texts, embedding=OpenAIEmbeddings(),
-                                     persist_directory=None)
-    vectordb.persist()
-    retriever = vectordb.as_retriever(search_kwargs={'k': 7})
-    return retriever
+    embeddings = OpenAIEmbeddings()
+    dimension = embeddings.dimension  # Replace with the dimension of your embeddings
+
+    # Initialize a dynamic list to hold our embeddings
+    embedding_list = []
+
+    for text in texts:
+        vector = embeddings.embed(text)
+        embedding_list.append(vector)
+
+    # Convert our list of embeddings to a numpy array
+    embedding_matrix = np.array(embedding_list).astype('float32')
+
+    # Build the FAISS index
+    index = faiss.IndexFlatL2(dimension)
+    index.add(embedding_matrix)
+
+    return index
 
 def embeddings_on_mongodb(texts):
     client = MongoClient(os.environ['MONGODB_URI'])
