@@ -33,8 +33,6 @@ def load_documents(doc_files):
             for page in range(reader.getNumPages()):
                 content += reader.getPage(page).extractText()
             documents.append(content)
-        except PdfReadError as e:
-            print(f"Error reading PDF file {doc_file}: {e}")
         except Exception as e:
             print(f"Unexpected error with file {doc_file}: {e}")
     return documents
