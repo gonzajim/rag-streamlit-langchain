@@ -7,7 +7,7 @@ from pathlib import Path
 import numpy as np
 import faiss
 from langchain.chains import RetrievalQA, ConversationalRetrievalChain
-from langchain.embeddings import OpenAIEmbeddings
+from langchain_openai import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
 from langchain import OpenAI
 from langchain.llms.openai import OpenAIChat
@@ -44,19 +44,18 @@ def split_documents(documents):
         texts.extend(text_splitter.split_text(document))
     return texts
 
+
+@st.cache(allow_output_mutation=True)
 def embeddings_on_local_vectordb(texts):
-    embeddings = OpenAIEmbeddings()
-    dimension = 900  # Replace with the dimension of your embeddings
+    embed_model = OpenAIEmbeddings(model="text-embedding-3-large")
 
-    # Initialize a dynamic list to hold our embeddings
-    embedding_list = []
-
-    for text in texts:
-        vector = embeddings.embed(text)
-        embedding_list.append(vector)
+    embeddings = embed_model.embed_documents(texts)
 
     # Convert our list of embeddings to a numpy array
-    embedding_matrix = np.array(embedding_list).astype('float32')
+    embedding_matrix = np.array(embeddings).astype('float32')
+
+    # Define the dimension of your embeddings
+    dimension = embedding_matrix.shape[1]
 
     # Build the FAISS index
     index = faiss.IndexFlatL2(dimension)
