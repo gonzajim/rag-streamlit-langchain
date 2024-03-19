@@ -19,6 +19,7 @@ from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
 from PyPDF2 import PdfFileReader
 from io import BytesIO
 import streamlit as st
+from PyPDF2 import PdfReadError
 
 st.set_page_config(page_title="RAG")
 st.title("Retrieval Augmented Generation Engine")
@@ -26,11 +27,16 @@ st.title("Retrieval Augmented Generation Engine")
 def load_documents(doc_files):
     documents = []
     for doc_file in doc_files:
-        reader = PdfFileReader(BytesIO(doc_file.read()))
-        content = ""
-        for page in range(reader.getNumPages()):
-            content += reader.getPage(page).extractText()
-        documents.append(content)
+        try:
+            reader = PdfFileReader(BytesIO(doc_file.read()))
+            content = ""
+            for page in range(reader.getNumPages()):
+                content += reader.getPage(page).extractText()
+            documents.append(content)
+        except PdfReadError as e:
+            print(f"Error reading PDF file {doc_file}: {e}")
+        except Exception as e:
+            print(f"Unexpected error with file {doc_file}: {e}")
     return documents
 
 def split_documents(documents):
