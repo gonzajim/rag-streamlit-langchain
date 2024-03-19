@@ -16,7 +16,8 @@ from langchain.vectorstores import Chroma
 from langchain.embeddings.openai import OpenAIEmbeddings
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
-
+from PyPDF2 import PdfFileReader
+from io import BytesIO
 import streamlit as st
 
 st.set_page_config(page_title="RAG")
@@ -25,7 +26,11 @@ st.title("Retrieval Augmented Generation Engine")
 def load_documents(doc_files):
     documents = []
     for doc_file in doc_files:
-        documents.append(doc_file.read())
+        reader = PdfFileReader(BytesIO(doc_file.read()))
+        content = ""
+        for page in range(reader.getNumPages()):
+            content += reader.getPage(page).extractText()
+        documents.append(content)
     return documents
 
 def split_documents(documents):
