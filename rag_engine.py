@@ -5,7 +5,7 @@ from pymongo import MongoClient
 from bson.binary import Binary
 import pickle
 import numpy as np
-from langchain.index import FAISS
+from langchain import FAISS
 import streamlit as st
 from PyPDF2 import PdfFileReader
 from langchain.chains import RetrievalQA, ConversationalRetrievalChain
