@@ -53,7 +53,7 @@ def embeddings_on_local_vectordb(texts):
         separators=["\n\n", "\n", " ", ""],
     )
     source_chunks = text_splitter.split_documents(texts)
-    index = FAISS.from_documents(source_chunks, embeddings)
+    index = faiss.from_documents(source_chunks, embeddings)
 
     return index
 
