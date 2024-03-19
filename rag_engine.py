@@ -82,13 +82,21 @@ def process_documents():
     else:
         try:
             documents = load_documents(st.session_state.source_docs)
+        except Exception as e:
+            st.error(f"An error occurred while loading documents: {e}")
+
+        try:
             texts = split_documents(documents)
+        except Exception as e:
+            st.error(f"An error occurred while splitting documents: {e}")
+
+        try:
             if not st.session_state.mongodb_db:
                 st.session_state.retriever = embeddings_on_local_vectordb(texts)
             else:
                 st.session_state.retriever = embeddings_on_mongodb(texts)
         except Exception as e:
-            st.error(f"An error occurred: {e}")
+            st.error(f"An error occurred while retrieving embeddings: {e}")
 
 def boot():
     input_fields()
