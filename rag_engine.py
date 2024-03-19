@@ -5,7 +5,7 @@ from pymongo import MongoClient
 from bson.binary import Binary
 import pickle
 import numpy as np
-import langchain_community.vectorstores as faiss
+from langchain.index import FAISS
 import streamlit as st
 from PyPDF2 import PdfFileReader
 from langchain.chains import RetrievalQA, ConversationalRetrievalChain
@@ -53,17 +53,8 @@ def embeddings_on_local_vectordb(texts):
         separators=["\n\n", "\n", " ", ""],
     )
     source_chunks = text_splitter.split_documents(texts)
-    # Get embeddings for each document
-    doc_embeddings = [embeddings.embed(doc) for doc in source_chunks]
-
-    # Stack embeddings into a matrix
-    embeddings_matrix = np.vstack(doc_embeddings)
-
-    # Create a FAISS index
-    index = faiss.IndexFlatL2(embeddings_matrix.shape[1])
-
-    # Add vectors to the index
-    index.add(embeddings_matrix)
+    index = FAISS()
+    index.from_documents(source_chunks, embeddings)
 
     return index
 
