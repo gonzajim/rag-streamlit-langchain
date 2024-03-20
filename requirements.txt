@@ -9,5 +9,3 @@ langchain
 langchain-community
 langchain-openai
 langchain-text-splitters
-chromadb
-sqlite3>=3.35.0
