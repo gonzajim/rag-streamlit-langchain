@@ -50,24 +50,25 @@ def split_documents(documents):
 @st.cache(allow_output_mutation=True)
 def embeddings_on_local_vectordb(source_chunks):
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
+    st.error("Beginning embeddings on local vector...")
     index = FAISS()
-    st.write("Training the FAISS index...")
+    st.error("Training the FAISS index...")
 
     # Get embeddings for each document
     doc_embeddings = [embeddings.embed(doc) for doc in source_chunks]
-    st.write("Get embeddings for each document...")
+    st.error("Get embeddings for each document...")
 
     # Stack embeddings into a matrix
     embeddings_matrix = np.vstack(doc_embeddings)
-    st.write("Stack embeddings into a matrix...")
+    st.error("Stack embeddings into a matrix...")
 
     # Train the FAISS index
     index.train(embeddings_matrix)
-    st.write("Train the FAISS index...")
+    st.error("Train the FAISS index...")
 
     # Add vectors to the index
     index.add(embeddings_matrix)
-    st.write("Add vectors to the index...")
+    st.error("Add vectors to the index...")
 
     return index
 
