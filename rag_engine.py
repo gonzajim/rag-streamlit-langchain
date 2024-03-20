@@ -37,24 +37,32 @@ def load_documents(doc_files):
 
 def split_documents(documents):
     text_splitter = CharacterTextSplitter()
-    texts = []
-    for document in documents:
-        texts.extend(text_splitter.split_text(document))
-    return texts
+    text_splitter = RecursiveCharacterTextSplitter(
+    chunk_size=500,
+    chunk_overlap=100,
+    length_function=len,
+    is_separator_regex=False,
+    separators=["\n\n", "\n", " ", ""],
+    )
+    source_chunks = text_splitter.split_documents(documents)
+    return source_chunks
 
 @st.cache(allow_output_mutation=True)
-def embeddings_on_local_vectordb(texts):
+def embeddings_on_local_vectordb(source_chunks):
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
-    text_splitter = RecursiveCharacterTextSplitter(
-        chunk_size=500,
-        chunk_overlap=100,
-        length_function=len,
-        is_separator_regex=False,
-        separators=["\n\n", "\n", " ", ""],
-    )
-    source_chunks = text_splitter.split_documents(texts)
     index = FAISS()
-    index.from_documents(source_chunks, embeddings)
+
+    # Get embeddings for each document
+    doc_embeddings = [embeddings.embed(doc) for doc in source_chunks]
+
+    # Stack embeddings into a matrix
+    embeddings_matrix = np.vstack(doc_embeddings)
+
+    # Train the FAISS index
+    index.train(embeddings_matrix)
+
+    # Add vectors to the index
+    index.add(embeddings_matrix)
 
     return index
 
