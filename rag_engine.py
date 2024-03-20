@@ -2,6 +2,7 @@ import os
 from io import BytesIO
 from pathlib import Path
 from pymongo import MongoClient
+from chromadb import ChromaDB
 from bson.binary import Binary
 import pickle
 import numpy as np
@@ -19,23 +20,21 @@ from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 
+
 st.set_page_config(page_title="RAG")
 st.title("Retrieval Augmented Generation Engine")
 
-def load_documents(doc_files):
-    documents = []
-    for doc_file in doc_files:
-        try:
-            reader = PdfFileReader(BytesIO(doc_file.read()))
-            content = ""
-            for page in range(reader.getNumPages()):
-                content += reader.getPage(page).extractText()
-            documents.append(content)
-        except Exception as e:
-            print(f"Unexpected error with file {doc_file}: {e}")
-    return documents
+def extract_text_from_pdf(pdf_path):
+    document = []
+    try:
+        reader = PdfFileReader(BytesIO(pdf_path.read()))
+        content = ""
+        for page in range(reader.getNumPages()):
+            content += reader.getPage(page).extractText()
+        document.append(content)
+    except Exception as e:
+        print(f"Unexpected error with file {pdf_path}: {e}")
 
-def split_documents(documents):
     text_splitter = CharacterTextSplitter()
     text_splitter = RecursiveCharacterTextSplitter(
     chunk_size=500,
@@ -44,46 +43,31 @@ def split_documents(documents):
     is_separator_regex=False,
     separators=["\n\n", "\n", " ", ""],
     )
-    source_chunks = text_splitter.split_documents(documents)
+    source_chunks = text_splitter.split_documents(document)
     return source_chunks
 
-@st.cache(allow_output_mutation=True)
-def embeddings_on_local_vectordb(source_chunks):
-    embeddings = OpenAIEmbeddings(model="text-embedding-3-small")
-    st.error("Beginning embeddings on local vector...")
-    index = FAISS()
-    st.error("Training the FAISS index...")
+# Función para generar embeddings y almacenarlos en ChromaDB
+def generate_and_store_embeddings(chromadb, pdf_paths):
+    embeddings = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=os.environ['OPENAI_API_KEY'])
+    for pdf_path in pdf_paths:
+        # Extraer texto del documento PDF
+        text = extract_text_from_pdf(pdf_path)
+        
+        # Generar embedding del texto con OpenAI Embeddings
+        document_embedding = embeddings.embed_text(text)
+        
+        # Almacenar el embedding en ChromaDB
+        chromadb.insert_embedding(pdf_path, document_embedding)
+        # Crear un índice de búsqueda en ChromaDB
+        chromadb.create_index()
 
-    # Get embeddings for each document
-    doc_embeddings = [embeddings.embed(doc) for doc in source_chunks]
-    st.error("Get embeddings for each document...")
+        # Almacenar el texto en MongoDB
+        client = MongoClient(os.environ['MONGODB_URI'])
+        db = client[os.environ['MONGODB_DB']]
+        collection = db[os.environ['MONGODB_COLLECTION']]
+        collection.insert_one({"text": text, "vector": Binary(pickle.dumps(document_embedding, protocol=2))})
 
-    # Stack embeddings into a matrix
-    embeddings_matrix = np.vstack(doc_embeddings)
-    st.error("Stack embeddings into a matrix...")
-
-    # Train the FAISS index
-    index.train(embeddings_matrix)
-    st.error("Train the FAISS index...")
-
-    # Add vectors to the index
-    index.add(embeddings_matrix)
-    st.error("Add vectors to the index...")
-
-    return index
-
-def embeddings_on_mongodb(texts):
-    client = MongoClient(os.environ['MONGODB_URI'])
-    db = client[os.environ['MONGODB_DB']]
-    collection = db[os.environ['MONGODB_COLLECTION']]
-    
-    embeddings = OpenAIEmbeddings(openai_api_key=os.environ['OPENAI_API_KEY'])
-    for text in texts:
-        vector = embeddings.embed(text)
-        collection.insert_one({"text": text, "vector": Binary(pickle.dumps(vector, protocol=2))})
-    
-    retriever = None  # You need to implement a retriever that can fetch and search vectors from MongoDB
-    return retriever
+        return chromadb.as_retriever(search_kwargs={"k": 100, "fetch_k": 100, "lambda_mult": 5})
 
 def query_llm(retriever, query):
     qa_chain = ConversationalRetrievalChain.from_llm(
@@ -101,24 +85,13 @@ def input_fields():
     st.session_state.source_docs = st.file_uploader(label="Upload Documents", type="pdf", accept_multiple_files=True)
 
 def process_documents():
+    chromadb = ChromaDB()
     if not st.session_state.source_docs:
         st.warning(f"Please upload the documents.")
     else:
         try:
-            documents = load_documents(st.session_state.source_docs)
-        except Exception as e:
-            st.error(f"An error occurred while loading documents: {e}")
-
-        try:
-            texts = split_documents(documents)
-        except Exception as e:
-            st.error(f"An error occurred while splitting documents: {e}")
-
-        try:
-            if not st.session_state.mongodb_db:
-                st.session_state.retriever = embeddings_on_local_vectordb(texts)
-            else:
-                st.session_state.retriever = embeddings_on_mongodb(texts)
+            retriever = generate_and_store_embeddings(chromadb, st.session_state.source_docs)
+            st.session_state.retriever = retriever
         except Exception as e:
             st.error(f"An error occurred while retrieving embeddings: {e}")
 
