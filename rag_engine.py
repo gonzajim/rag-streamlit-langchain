@@ -46,28 +46,26 @@ def extract_text_from_pdf(pdf_path):
     source_chunks = text_splitter.split_documents(document)
     return source_chunks
 
-# Función para generar embeddings y almacenarlos en ChromaDB
-def generate_and_store_embeddings(chromadb, pdf_paths):
+# Function to generate embeddings and store them in FAISS
+def generate_and_store_embeddings(faiss_index, pdf_paths):
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=os.environ['OPENAI_API_KEY'])
     for pdf_path in pdf_paths:
-        # Extraer texto del documento PDF
+        # Extract text from the PDF document
         text = extract_text_from_pdf(pdf_path)
         
-        # Generar embedding del texto con OpenAI Embeddings
+        # Generate embedding of the text with OpenAI Embeddings
         document_embedding = embeddings.embed_text(text)
         
-        # Almacenar el embedding en ChromaDB
-        chromadb.insert_embedding(pdf_path, document_embedding)
-        # Crear un índice de búsqueda en ChromaDB
-        chromadb.create_index()
+        # Store the embedding in FAISS
+        faiss_index.add(np.array([document_embedding]))
 
-        # Almacenar el texto en MongoDB
+        # Store the text in MongoDB
         client = MongoClient(os.environ['MONGODB_URI'])
         db = client[os.environ['MONGODB_DB']]
         collection = db[os.environ['MONGODB_COLLECTION']]
         collection.insert_one({"text": text, "vector": Binary(pickle.dumps(document_embedding, protocol=2))})
 
-        return chromadb.as_retriever(search_kwargs={"k": 100, "fetch_k": 100, "lambda_mult": 5})
+    return faiss_index
 
 def query_llm(retriever, query):
     qa_chain = ConversationalRetrievalChain.from_llm(
@@ -85,15 +83,16 @@ def input_fields():
     st.session_state.source_docs = st.file_uploader(label="Upload Documents", type="pdf", accept_multiple_files=True)
 
 def process_documents():
-    chromadb = ChromaDB()
+    faiss_index = FAISS(128)  # Initialize FAISS index with the dimension of your embeddings
     if not st.session_state.source_docs:
         st.warning(f"Please upload the documents.")
     else:
         try:
-            retriever = generate_and_store_embeddings(chromadb, st.session_state.source_docs)
+            retriever = generate_and_store_embeddings(faiss_index, st.session_state.source_docs)
             st.session_state.retriever = retriever
         except Exception as e:
             st.error(f"An error occurred while retrieving embeddings: {e}")
+
 
 def boot():
     input_fields()
