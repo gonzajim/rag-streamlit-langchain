@@ -7,7 +7,7 @@ import pickle
 import numpy as np
 from langchain import FAISS
 import streamlit as st
-from PyPDF2 import PdfFileReader
+from PyPDF2 import PdfReader
 from langchain.chains import RetrievalQA, ConversationalRetrievalChain
 from langchain_openai import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
@@ -24,8 +24,8 @@ st.set_page_config(page_title="RAG")
 st.title("Retrieval Augmented Generation Engine")
 
 def extract_text_from_pdf(uploaded_file):
-    pdf = PdfFileReader(uploaded_file)
-    text = " ".join(page.extractText() for page in pdf.pages)
+    pdf = PdfReader(uploaded_file)
+    text = " ".join(page.extract_text() for page in pdf.pages)
     return text
 
 # Function to generate embeddings and store them in FAISS
