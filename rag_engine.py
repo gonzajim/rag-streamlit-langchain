@@ -46,7 +46,7 @@ def extract_text_from_pdf(pdf_path):
     return source_chunks
 
 # Function to generate embeddings and store them in FAISS
-def generate_and_store_embeddings(faiss_index, pdf_paths):
+def generate_and_store_embeddings(pdf_paths):
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=os.environ['OPENAI_API_KEY'])
     for pdf_path in pdf_paths:
         # Extract text from the PDF document
@@ -54,17 +54,17 @@ def generate_and_store_embeddings(faiss_index, pdf_paths):
         
         # Generate embedding of the text with OpenAI Embeddings
         document_embedding = embeddings.embed_text(text)
-        
-        # Store the embedding in FAISS
-        faiss_index.add(np.array([document_embedding]))
+
+        #Save the embeddings in FAISS
+        db = FAISS.from_documents(text, document_embedding)
 
         # Store the text in MongoDB
         client = MongoClient(os.environ['MONGODB_URI'])
         db = client[os.environ['MONGODB_DB']]
         collection = db[os.environ['MONGODB_COLLECTION']]
-        collection.insert_one({"text": text, "vector": Binary(pickle.dumps(document_embedding, protocol=2))})
+        #collection.insert_one({"text": text, "vector": Binary(pickle.dumps(db, protocol=2))})
 
-    return faiss_index
+    return db
 
 def query_llm(retriever, query):
     qa_chain = ConversationalRetrievalChain.from_llm(
@@ -82,13 +82,12 @@ def input_fields():
     st.session_state.source_docs = st.file_uploader(label="Upload Documents", type="pdf", accept_multiple_files=True)
 
 def process_documents():
-    faiss_index = FAISS(128)  # Initialize FAISS index with the dimension of your embeddings
     if not st.session_state.source_docs:
         st.warning(f"Please upload the documents.")
     else:
         try:
-            retriever = generate_and_store_embeddings(faiss_index, st.session_state.source_docs)
-            st.session_state.retriever = retriever
+            db = generate_and_store_embeddings(st.session_state.source_docs)
+            st.session_state.retriever = db.retriever
         except Exception as e:
             st.error(f"An error occurred while retrieving embeddings: {e}")
 
