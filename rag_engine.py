@@ -23,6 +23,12 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 st.set_page_config(page_title="RAG")
 st.title("Retrieval Augmented Generation Engine")
 
+def extract_text_from_pdf(pdf_path):
+    with open(pdf_path, "rb") as file:
+        pdf = PdfFileReader(file)
+        text = " ".join(page.extractText() for page in pdf.pages)
+    return text
+
 # Function to generate embeddings and store them in FAISS
 def generate_and_store_embeddings(pdf_paths):
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=os.environ['OPENAI_API_KEY'])
