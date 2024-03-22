@@ -2,7 +2,6 @@ import os
 from io import BytesIO
 from pathlib import Path
 from pymongo import MongoClient
-from chromadb import ChromaDB
 from bson.binary import Binary
 import pickle
 import numpy as np
