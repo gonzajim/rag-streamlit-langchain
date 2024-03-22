@@ -23,47 +23,36 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 st.set_page_config(page_title="RAG")
 st.title("Retrieval Augmented Generation Engine")
 
-def extract_text_from_pdf(pdf_path):
-    document = []
-    try:
-        reader = PdfFileReader(BytesIO(pdf_path.read()))
-        content = ""
-        for page in range(reader.getNumPages()):
-            content += reader.getPage(page).extractText()
-        document.append(content)
-    except Exception as e:
-        print(f"Unexpected error with file {pdf_path}: {e}")
-
-    text_splitter = CharacterTextSplitter()
-    text_splitter = RecursiveCharacterTextSplitter(
-    chunk_size=500,
-    chunk_overlap=100,
-    length_function=len,
-    is_separator_regex=False,
-    separators=["\n\n", "\n", " ", ""],
-    )
-    source_chunks = text_splitter.split_documents(document)
-    return source_chunks
-
 # Function to generate embeddings and store them in FAISS
 def generate_and_store_embeddings(pdf_paths):
     embeddings = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=os.environ['OPENAI_API_KEY'])
+    all_documents = []
     for pdf_path in pdf_paths:
         # Extract text from the PDF document
         text = extract_text_from_pdf(pdf_path)
         
-        # Generate embedding of the text with OpenAI Embeddings
-        document_embedding = embeddings.embed_text(text)
+        # Split the text into chunks
+        text_splitter = RecursiveCharacterTextSplitter(
+            chunk_size=500,
+            chunk_overlap=100,
+            length_function=len,
+            is_separator_regex=False,
+            separators=["\n\n", "\n", " ", ""],
+        )
+        document_chunks = text_splitter.split_documents([text])
+        
+        # Add the chunks to the list of all documents
+        all_documents.extend(document_chunks)
+    
+    # Generate embeddings and store them in FAISS for all documents
+    db = FAISS.from_documents(all_documents, embeddings)
 
-        #Save the embeddings in FAISS
-        db = FAISS.from_documents(text, document_embedding)
-
-        # Store the text in MongoDB
-        client = MongoClient(os.environ['MONGODB_URI'])
-        db = client[os.environ['MONGODB_DB']]
-        collection = db[os.environ['MONGODB_COLLECTION']]
-        #collection.insert_one({"text": text, "vector": Binary(pickle.dumps(db, protocol=2))})
-
+    # Store the text in MongoDB
+    client = MongoClient(os.environ['MONGODB_URI'])
+    db = client[os.environ['MONGODB_DB']]
+    collection = db[os.environ['MONGODB_COLLECTION']]
+    #collection.insert_one({"text": text, "vector": Binary(pickle.dumps(db, protocol=2))})
+    
     return db
 
 def query_llm(retriever, query):
@@ -87,7 +76,7 @@ def process_documents():
     else:
         try:
             db = generate_and_store_embeddings(st.session_state.source_docs)
-            st.session_state.retriever = db.retriever
+            st.session_state.retriever = db.as_retriever()
         except Exception as e:
             st.error(f"An error occurred while retrieving embeddings: {e}")
 
