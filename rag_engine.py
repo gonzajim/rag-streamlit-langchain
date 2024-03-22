@@ -33,8 +33,8 @@ def process_documents():
         st.warning(f"Please upload the documents.")
     else:
         try:
-            db = generate_and_store_embeddings(st.session_state.source_docs)
-            st.session_state.retriever = db.as_retriever()
+            db = extract_text_from_pdf(st.session_state.source_docs)
+            st.write(f"Texto subido: {text.strip()[:100]}")
         except Exception as e:
             st.error(f"An error occurred while retrieving embeddings: {e}")
 
