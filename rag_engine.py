@@ -88,7 +88,8 @@ def process_documents():
             db = FAISS.from_texts(all_chunks, embeddings)
             st.write(f"Indice de FAISS: {db.index.ntotal}")
 
-            st.session_state.db = db
+            # Guardo el retriever en sesión
+            st.session_state.retriever = db.as_retriever()
 
             #Guardo los embeddings en MongoDB
             #docsearch = save_embeddings_to_mongo(all_chunks, embeddings, index_name="uclm_corpus")
@@ -145,7 +146,7 @@ if prompt:
             return qs
         
         # get the chain with the retrieval callback
-        custom_chain = get_rag_chain(retrieval_cb=retrieval_cb, vectorstore=st.session_state.db.index)
+        custom_chain = get_rag_chain(retrieval_cb=retrieval_cb, vectorstore=st.session_state.retriever)
     
         if "messages" in st.session_state:
             chat_history = [convert_message(m) for m in st.session_state.messages[:-1]]
