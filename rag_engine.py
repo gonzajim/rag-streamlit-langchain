@@ -24,6 +24,15 @@ def extract_text_from_pdf(uploaded_file):
     text = " ".join(page.extract_text() for page in pdf.pages)
     return text
 
+def extract_pages_from_pdf(file):
+    # Abre el archivo en modo lectura binaria
+    with open(file, 'rb') as file:
+        # Crea un objeto PdfFileReader
+        pdf = PyPDF2.PdfFileReader(file)
+        # Extrae el texto de cada página
+        pages = [pdf.getPage(i).extractText() for i in range(pdf.getNumPages())]
+    return pages
+
 def get_text_chunks(text):
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=500,
@@ -51,8 +60,8 @@ def process_documents():
                 chunks = get_text_chunks(text)
                 # Guardo los chunks en una lista con todos los libros
                 all_chunks.extend(chunks)
-                # Guardo el documento en una lista
-                all_docs.append(uploaded_file)
+                # Guardo las páginas del documento en una lista
+                all_docs.append(extract_pages_from_pdf(uploaded_file))
             
             # Genero los embeddings de los chunks
             embeddings = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=os.environ['OPENAI_API_KEY'])
