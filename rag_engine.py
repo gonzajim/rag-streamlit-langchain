@@ -61,6 +61,17 @@ def get_embeddings_from_mongo():
 
     return documents
 
+def query_llm(retriever, query):
+    qa_chain = ConversationalRetrievalChain.from_llm(
+        llm=OpenAIChat(openai_api_key=os.environ['OPENAI_API_KEY']),
+        retriever=retriever,
+        return_source_documents=True,
+    )
+    result = qa_chain({'question': query, 'chat_history': st.session_state.messages})
+    result = result['answer']
+    st.session_state.messages.append((query, result))
+    return result
+
 def input_fields():
     st.session_state.source_docs = st.file_uploader(label="Suba documentos al corpus", type="pdf", accept_multiple_files=True)
 
@@ -81,18 +92,30 @@ def process_documents():
             embeddings = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=os.environ['OPENAI_API_KEY'])
             db = FAISS.from_texts(all_chunks, embeddings)
             st.write(f"Indice de FAISS: {db.index.ntotal}")
-            docsearch = save_embeddings_to_mongo(all_chunks, embeddings, index_name="uclm_corpus")
-            index = get_embeddings_from_mongo()
+
+            st.session_state.retriever = db.as_retriever()
+
+            #Guardo los embeddings en MongoDB
+            #docsearch = save_embeddings_to_mongo(all_chunks, embeddings, index_name="uclm_corpus")
+
+            # Recupero los embeddings de MongoDB
+            #index = get_embeddings_from_mongo()
             #st.write(f"Indice de FAISS: {docsearch.search_by_vector(embeddings[1], top_k=10)}")
         except Exception as e:
             st.error(f"An error occurred while retrieving embeddings: {e}")
 
-
 def boot():
     input_fields()
-    st.button("Subir documentos", on_click=process_documents)
-    if st.session_state.source_docs:
-        st.write(f"Documentos subidos: {len(st.session_state.source_docs)}")
+    st.button("Enviar Documentos", on_click=process_documents)
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+    for message in st.session_state.messages:
+        st.chat_message('human').write(message[0])
+        st.chat_message('ai').write(message[1])    
+    if query := st.chat_input():
+        st.chat_message("human").write(query)
+        response = query_llm(st.session_state.retriever, query)
+        st.chat_message("ai").write(response)
 
 if __name__ == '__main__':
     boot()
