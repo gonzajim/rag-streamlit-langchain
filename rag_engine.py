@@ -28,7 +28,7 @@ def extract_pages_from_pdf(uploaded_file):
     # Crea un objeto PdfFileReader
     pdf = PdfReader(uploaded_file)
     # Extrae el texto de cada página
-    pages = [pdf.getPage(i).extractText() for i in range(len(pdf.pages))]
+    pages = [pdf.pages[i].extractText() for i in range(len(pdf.pages))]
     st.write(f"Páginas que tiene el libro: {pages}")
     return pages
 
