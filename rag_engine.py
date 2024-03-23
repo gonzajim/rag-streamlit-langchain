@@ -4,6 +4,7 @@ import numpy as np
 from langchain import FAISS
 import streamlit as st
 from PyPDF2 import PdfReader
+from PyPDF2 import PdfFileReader
 from langchain.chains import RetrievalQA, ConversationalRetrievalChain
 from langchain_openai import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
@@ -24,14 +25,12 @@ def extract_text_from_pdf(uploaded_file):
     text = " ".join(page.extract_text() for page in pdf.pages)
     return text
 
-def extract_pages_from_pdf(file):
-    # Abre el archivo en modo lectura binaria
-    with open(file, 'rb') as file:
-        # Crea un objeto PdfFileReader
-        pdf = PyPDF2.PdfFileReader(file)
-        # Extrae el texto de cada página
-        pages = [pdf.getPage(i).extractText() for i in range(pdf.getNumPages())]
-        st.write(f"Páginas que tiene el libro: {pages}")
+def extract_pages_from_pdf(uploaded_file):
+    # Crea un objeto PdfFileReader
+    pdf = PdfFileReader(uploaded_file)
+    # Extrae el texto de cada página
+    pages = [pdf.getPage(i).extractText() for i in range(pdf.getNumPages())]
+    st.write(f"Páginas que tiene el libro: {pages}")
     return pages
 
 def get_text_chunks(text):
