@@ -67,7 +67,7 @@ def process_documents():
             embeddings = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=os.environ['OPENAI_API_KEY'])
             db = FAISS.from_texts(all_chunks, embeddings)
             st.write(f"Indice de FAISS: {db.index.ntotal}")
-            #docsearch = save_embeddings_to_mongo(all_chunks, embeddings, index_name="uclm_corpus")
+            docsearch = save_embeddings_to_mongo(all_chunks, embeddings, index_name="uclm_corpus")
             #st.write(f"Indice de FAISS: {docsearch.search_by_vector(embeddings[1], top_k=10)}")
         except Exception as e:
             st.error(f"An error occurred while retrieving embeddings: {e}")
