@@ -55,7 +55,7 @@ def get_embeddings_from_mongo():
     # Load embeddings from MongoDB
     embeddings = []
     for doc in collection.find():
-        embeddings.append(doc['embedding'])
+        embeddings.append(doc['uclm_corpus'])
     embeddings = np.array(embeddings)
 
     # Initialize FAISS index
