@@ -1,30 +1,16 @@
 import os
-from io import BytesIO
-import numpy as np
 import streamlit as st
 from PyPDF2 import PdfReader
-from langchain.chains import RetrievalQA, ConversationalRetrievalChain
+from langchain.chains import ConversationalRetrievalChain
 from langchain_openai import OpenAIEmbeddings
 from langchain.vectorstores import FAISS
-from langchain import OpenAI
 from langchain.llms.openai import OpenAIChat
-from langchain.document_loaders import DirectoryLoader
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.memory import ConversationBufferMemory
-from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pymongo import MongoClient
 from langchain.vectorstores import MongoDBAtlasVectorSearch
-from langchain.callbacks.streamlit.streamlit_callback_handler import StreamlitCallbackHandler
-from langchain.chat_models import ChatOpenAI
-from langchain.schema.output_parser import StrOutputParser
-from langchain.schema.runnable import RunnableMap, RunnablePassthrough
 from langchain_text_splitters import RecursiveCharacterTextSplitter
-from langchain.prompts import ChatPromptTemplate
-from langchain.prompts.prompt import PromptTemplate
-from operator import itemgetter
 from pymongo import MongoClient
-import llm_helper
+from llm_helper import get_rag_chain, convert_message
 
 st.set_page_config(page_title="RAG Recava UCLM")
 st.title("Retrieval Augmented Generation - RECAVA - UCLM")
