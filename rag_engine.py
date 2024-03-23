@@ -25,17 +25,6 @@ def extract_text_from_pdf(uploaded_file):
     text = " ".join(page.extract_text() for page in pdf.pages)
     return text
 
-def save_embeddings_to_mongo(embedded_docs, embeddings, index_name="uclm_corpus"):
-    # Initialize MongoDB python client
-    client = MongoClient(os.environ['MONGODB_URI'])
-    collection = client[os.environ['MONGODB_DB']][os.environ['MONGODB_COLLECTION']]
-
-    # Insert the documents in MongoDB Atlas with their embedding
-    docsearch = MongoDBAtlasVectorSearch.from_documents(
-        embedded_docs, embeddings, collection=collection, index_name=index_name
-    )
-    return docsearch
-
 def get_text_chunks(text):
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=500,
@@ -46,6 +35,17 @@ def get_text_chunks(text):
     )
     chunks = text_splitter.split_text(text)
     return chunks
+
+def save_embeddings_to_mongo(embedded_docs, embeddings, index_name="uclm_corpus"):
+    # Initialize MongoDB python client
+    client = MongoClient(os.environ['MONGODB_URI'])
+    collection = client[os.environ['MONGODB_DB']][os.environ['MONGODB_COLLECTION']]
+
+    # Insert the documents in MongoDB Atlas with their embedding
+    docsearch = MongoDBAtlasVectorSearch.from_documents(
+        embedded_docs, embeddings, collection=collection, index_name=index_name
+    )
+    return docsearch
 
 def input_fields():
     st.session_state.source_docs = st.file_uploader(label="Suba documentos al corpus", type="pdf", accept_multiple_files=True)
