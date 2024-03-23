@@ -1,12 +1,11 @@
 import os
 from io import BytesIO
 import numpy as np
-from langchain import FAISS
 import streamlit as st
 from PyPDF2 import PdfReader
 from langchain.chains import RetrievalQA, ConversationalRetrievalChain
 from langchain_openai import OpenAIEmbeddings
-from langchain.vectorstores import Chroma
+from langchain.vectorstores import FAISS
 from langchain import OpenAI
 from langchain.llms.openai import OpenAIChat
 from langchain.document_loaders import DirectoryLoader
