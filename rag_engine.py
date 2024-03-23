@@ -33,7 +33,6 @@ def get_text_chunks(text):
         separators=["\n\n", "\n", " ", ""],
     )
     chunks = text_splitter.split_text(text)
-    st.write(f"Chunks: {len(chunks)}")
     return chunks
 
 def input_fields():
@@ -44,10 +43,14 @@ def process_documents():
         st.warning(f"No ha subido documentos, por favor hágalo para poder seguir.")
     else:
         try:
+            all_chunks = []
             for uploaded_file in st.session_state.source_docs:
                 # Leo un documento y extraigo su texto
                 text = extract_text_from_pdf(uploaded_file)
-                get_text_chunks(text)
+                chunks = get_text_chunks(text)
+                # Guardo los chunks en una lista con todos los libros
+                all_chunks.extend(chunks)
+                st.write(f"Tamaño de lista de todos los chunks: {len(all_chunks)}")
         except Exception as e:
             st.error(f"An error occurred while retrieving embeddings: {e}")
 
