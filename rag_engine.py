@@ -4,7 +4,6 @@ import numpy as np
 from langchain import FAISS
 import streamlit as st
 from PyPDF2 import PdfReader
-from PyPDF2 import PdfFileReader
 from langchain.chains import RetrievalQA, ConversationalRetrievalChain
 from langchain_openai import OpenAIEmbeddings
 from langchain.vectorstores import Chroma
@@ -27,7 +26,7 @@ def extract_text_from_pdf(uploaded_file):
 
 def extract_pages_from_pdf(uploaded_file):
     # Crea un objeto PdfFileReader
-    pdf = PdfFileReader(uploaded_file)
+    pdf = PdfReader(uploaded_file)
     # Extrae el texto de cada página
     pages = [pdf.getPage(i).extractText() for i in range(pdf.getNumPages())]
     st.write(f"Páginas que tiene el libro: {pages}")
