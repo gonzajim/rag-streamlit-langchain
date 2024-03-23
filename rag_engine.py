@@ -44,16 +44,19 @@ def process_documents():
     else:
         try:
             all_chunks = []
+            all_docs = []
             for uploaded_file in st.session_state.source_docs:
                 # Leo un documento y extraigo su texto
                 text = extract_text_from_pdf(uploaded_file)
                 chunks = get_text_chunks(text)
                 # Guardo los chunks en una lista con todos los libros
                 all_chunks.extend(chunks)
+                # Guardo el documento en una lista
+                all_docs.append(uploaded_file)
             
             # Genero los embeddings de los chunks
             embeddings = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=os.environ['OPENAI_API_KEY'])
-            db = FAISS.from_documents(all_chunks, embeddings)
+            db = FAISS.from_documents(all_docs, embeddings)
             st.write(f"Indice de FAISS: {db.index.ntotal}")
         except Exception as e:
             st.error(f"An error occurred while retrieving embeddings: {e}")
