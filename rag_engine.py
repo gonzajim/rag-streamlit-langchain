@@ -31,6 +31,7 @@ def extract_pages_from_pdf(file):
         pdf = PyPDF2.PdfFileReader(file)
         # Extrae el texto de cada página
         pages = [pdf.getPage(i).extractText() for i in range(pdf.getNumPages())]
+        st.write(f"Páginas que tiene el libro: {pages}")
     return pages
 
 def get_text_chunks(text):
