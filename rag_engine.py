@@ -63,7 +63,7 @@ def process_documents():
             
             # Genero los embeddings de los chunks
             embeddings = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=os.environ['OPENAI_API_KEY'])
-            db = FAISS.from_documents(all_docs, embeddings)
+            db = FAISS.from_documents(all_chunks, embeddings)
             st.write(f"Indice de FAISS: {db.index.ntotal}")
         except Exception as e:
             st.error(f"An error occurred while retrieving embeddings: {e}")
