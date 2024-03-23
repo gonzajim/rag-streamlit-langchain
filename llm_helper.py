@@ -15,7 +15,6 @@ from pymongo.errors import PyMongoError
 from typing import Optional
 import os
 import pickle
-import embed_pdf
 
 def convert_message(m):
     if m["role"] == "user":
