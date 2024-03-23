@@ -2,8 +2,6 @@ import os
 from io import BytesIO
 from pathlib import Path
 from pymongo import MongoClient
-from bson.binary import Binary
-import pickle
 import numpy as np
 from langchain import FAISS
 import streamlit as st
@@ -14,8 +12,6 @@ from langchain.vectorstores import Chroma
 from langchain import OpenAI
 from langchain.llms.openai import OpenAIChat
 from langchain.document_loaders import DirectoryLoader
-from langchain.text_splitter import CharacterTextSplitter
-from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 

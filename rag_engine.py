@@ -13,6 +13,8 @@ from langchain.text_splitter import CharacterTextSplitter
 from langchain.memory import ConversationBufferMemory
 from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
 from langchain_text_splitters import RecursiveCharacterTextSplitter
+from pymongo import MongoClient
+from langchain.vectorstores import MongoDBAtlasVectorSearch
 
 
 st.set_page_config(page_title="RAG Recava UCLM")
@@ -23,13 +25,16 @@ def extract_text_from_pdf(uploaded_file):
     text = " ".join(page.extract_text() for page in pdf.pages)
     return text
 
-def extract_pages_from_pdf(uploaded_file):
-    # Crea un objeto PdfFileReader
-    pdf = PdfReader(uploaded_file)
-    # Extrae el texto de cada página
-    pages = [pdf.pages[i].extract_text() for i in range(len(pdf.pages))]
-    st.write(f"Páginas que tiene el libro: {pages}")
-    return pages
+def save_embeddings_to_mongo(embedded_docs, embeddings, index_name="uclm_corpus"):
+    # Initialize MongoDB python client
+    client = MongoClient(os.environ['MONGODB_URI'])
+    collection = client[os.environ['MONGODB_DB']][os.environ['MONGODB_COLLECTION']]
+
+    # Insert the documents in MongoDB Atlas with their embedding
+    docsearch = MongoDBAtlasVectorSearch.from_documents(
+        embedded_docs, embeddings, collection=collection, index_name=index_name
+    )
+    return docsearch
 
 def get_text_chunks(text):
     text_splitter = RecursiveCharacterTextSplitter(
@@ -51,20 +56,19 @@ def process_documents():
     else:
         try:
             all_chunks = []
-            all_docs = []
             for uploaded_file in st.session_state.source_docs:
                 # Leo un documento y extraigo su texto
                 text = extract_text_from_pdf(uploaded_file)
                 chunks = get_text_chunks(text)
                 # Guardo los chunks en una lista con todos los libros
                 all_chunks.extend(chunks)
-                # Guardo las páginas del documento en una lista
-                all_docs.append(extract_pages_from_pdf(uploaded_file))
             
             # Genero los embeddings de los chunks
             embeddings = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=os.environ['OPENAI_API_KEY'])
             db = FAISS.from_documents(all_chunks, embeddings)
             st.write(f"Indice de FAISS: {db.index.ntotal}")
+            docsearch = save_embeddings_to_mongo(all_chunks, embeddings, index_name="uclm_corpus")
+            st.write(f"Indice de FAISS: {docsearch.search_by_vector(embeddings[1], top_k=10)}")
         except Exception as e:
             st.error(f"An error occurred while retrieving embeddings: {e}")
 
