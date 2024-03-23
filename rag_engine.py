@@ -56,7 +56,7 @@ def get_embeddings_from_mongo():
     embeddings = []
     documents = collection.find()
     for doc in documents:
-        st.write(f"Collection recuperada: {doc.vector}")
+        st.write(f"Collection recuperada: {doc}")
     
 
     return documents
