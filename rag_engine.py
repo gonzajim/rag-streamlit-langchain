@@ -5,7 +5,7 @@ import streamlit as st
 from PyPDF2 import PdfReader
 from langchain.chains import RetrievalQA, ConversationalRetrievalChain
 from langchain_openai import OpenAIEmbeddings
-from langchain.vectorstores import faiss
+from langchain.vectorstores import FAISS
 from langchain import OpenAI
 from langchain.llms.openai import OpenAIChat
 from langchain.document_loaders import DirectoryLoader
@@ -54,18 +54,10 @@ def get_embeddings_from_mongo():
 
     # Load embeddings from MongoDB
     embeddings = []
-    for doc in collection.find():
-        embeddings.append(doc['vector'])
-    embeddings = np.array(embeddings)
+    documents = collection.find()
+    st.write(f"Collection recuperada: {len(documents)}")
 
-    # Initialize FAISS index
-    dimension = embeddings.shape[1]  # Assuming embeddings are 1D arrays
-    index = faiss.IndexFlatL2(dimension)
-
-    # Add embeddings to FAISS index
-    index.add(embeddings)
-
-    return index
+    return documents
 
 def input_fields():
     st.session_state.source_docs = st.file_uploader(label="Suba documentos al corpus", type="pdf", accept_multiple_files=True)
@@ -85,7 +77,7 @@ def process_documents():
             
             # Genero los embeddings de los chunks
             embeddings = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=os.environ['OPENAI_API_KEY'])
-            db = faiss.from_texts(all_chunks, embeddings)
+            db = FAISS.from_texts(all_chunks, embeddings)
             st.write(f"Indice de FAISS: {db.index.ntotal}")
             docsearch = save_embeddings_to_mongo(all_chunks, embeddings, index_name="uclm_corpus")
             index = get_embeddings_from_mongo()
