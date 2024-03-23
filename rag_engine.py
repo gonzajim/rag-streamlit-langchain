@@ -47,6 +47,26 @@ def save_embeddings_to_mongo(embedded_docs, embeddings, index_name="uclm_corpus"
     )
     return docsearch
 
+def get_embeddings_from_mongo():
+    # Initialize MongoDB python client
+    client = MongoClient(os.environ['MONGODB_URI'])
+    collection = client[os.environ['MONGODB_DB']][os.environ['MONGODB_COLLECTION']]
+
+    # Load embeddings from MongoDB
+    embeddings = []
+    for doc in collection.find():
+        embeddings.append(doc['embedding'])
+    embeddings = np.array(embeddings)
+
+    # Initialize FAISS index
+    dimension = embeddings.shape[1]  # Assuming embeddings are 1D arrays
+    index = FAISS.IndexFlatL2(dimension)
+
+    # Add embeddings to FAISS index
+    index.add(embeddings)
+
+    return index
+
 def input_fields():
     st.session_state.source_docs = st.file_uploader(label="Suba documentos al corpus", type="pdf", accept_multiple_files=True)
 
@@ -68,6 +88,7 @@ def process_documents():
             db = FAISS.from_texts(all_chunks, embeddings)
             st.write(f"Indice de FAISS: {db.index.ntotal}")
             docsearch = save_embeddings_to_mongo(all_chunks, embeddings, index_name="uclm_corpus")
+            index = get_embeddings_from_mongo()
             #st.write(f"Indice de FAISS: {docsearch.search_by_vector(embeddings[1], top_k=10)}")
         except Exception as e:
             st.error(f"An error occurred while retrieving embeddings: {e}")
