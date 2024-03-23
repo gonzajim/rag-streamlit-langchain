@@ -50,7 +50,11 @@ def process_documents():
                 chunks = get_text_chunks(text)
                 # Guardo los chunks en una lista con todos los libros
                 all_chunks.extend(chunks)
-                st.write(f"Tamaño de lista de todos los chunks: {len(all_chunks)}")
+            
+            # Genero los embeddings de los chunks
+            embeddings = OpenAIEmbeddings(model="text-embedding-3-small", openai_api_key=os.environ['OPENAI_API_KEY'])
+            db = FAISS.from_documents(all_chunks, embeddings)
+            st.write(f"Indice de FAISS: {db.index.ntotal}")
         except Exception as e:
             st.error(f"An error occurred while retrieving embeddings: {e}")
 
