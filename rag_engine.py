@@ -114,6 +114,9 @@ def process_documents():
         except Exception as e:
             st.error(f"An error occurred while retrieving embeddings: {e}")
 
+input_fields()
+st.button("Submit Documents", on_click=process_documents)
+
 # create the message history state
 if "messages" not in st.session_state:
     st.session_state.messages = []
