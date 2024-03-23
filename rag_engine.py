@@ -146,7 +146,7 @@ if prompt:
             return qs
         
         # get the chain with the retrieval callback
-        custom_chain = get_rag_chain(retrieval_cb=retrieval_cb, vectorstore=db.index)
+        custom_chain = get_rag_chain(retrieval_cb=retrieval_cb, vectorstore=st.session_state.index)
     
         if "messages" in st.session_state:
             chat_history = [convert_message(m) for m in st.session_state.messages[:-1]]
