@@ -15,7 +15,16 @@ from langchain.memory.chat_message_histories import StreamlitChatMessageHistory
 from langchain_text_splitters import RecursiveCharacterTextSplitter
 from pymongo import MongoClient
 from langchain.vectorstores import MongoDBAtlasVectorSearch
-
+from langchain.callbacks.streamlit.streamlit_callback_handler import StreamlitCallbackHandler
+from langchain.chat_models import ChatOpenAI
+from langchain.schema.output_parser import StrOutputParser
+from langchain.schema.runnable import RunnableMap, RunnablePassthrough
+from langchain_text_splitters import RecursiveCharacterTextSplitter
+from langchain.prompts import ChatPromptTemplate
+from langchain.prompts.prompt import PromptTemplate
+from operator import itemgetter
+from pymongo import MongoClient
+import llm_helper
 
 st.set_page_config(page_title="RAG Recava UCLM")
 st.title("Retrieval Augmented Generation - RECAVA - UCLM")
@@ -94,6 +103,7 @@ def process_documents():
             st.write(f"Indice de FAISS: {db.index.ntotal}")
 
             st.session_state.retriever = db.as_retriever()
+            st.session_state.index = db.index
 
             #Guardo los embeddings en MongoDB
             #docsearch = save_embeddings_to_mongo(all_chunks, embeddings, index_name="uclm_corpus")
@@ -104,18 +114,73 @@ def process_documents():
         except Exception as e:
             st.error(f"An error occurred while retrieving embeddings: {e}")
 
-def boot():
-    input_fields()
-    st.button("Enviar Documentos", on_click=process_documents)
-    if "messages" not in st.session_state:
-        st.session_state.messages = []
-    for message in st.session_state.messages:
-        st.chat_message('human').write(message[0])
-        st.chat_message('ai').write(message[1])    
-    if query := st.chat_input():
-        st.chat_message("human").write(query)
-        response = query_llm(st.session_state.retriever, query)
-        st.chat_message("ai").write(response)
+# create the message history state
+if "messages" not in st.session_state:
+    st.session_state.messages = []
 
-if __name__ == '__main__':
-    boot()
+# render older messages
+for message in st.session_state.messages:
+    with st.chat_message(message["role"]):
+        st.markdown(message["content"])
+
+# render the chat input
+prompt = st.chat_input("Introduzca su pregunta...")
+if prompt:
+    st.session_state.messages.append({"role": "user", "content": prompt})
+
+    # render the user's new message
+    with st.chat_message("user"):
+        st.markdown(prompt)
+
+    # render the assistant's response
+    with st.chat_message("assistant"):
+        retrival_container = st.container()
+        message_placeholder = st.empty()
+
+        # Add a placeholder for the loading message
+        loading_message = st.empty()
+        loading_message.text("Estamos procesando su pregunta...")
+
+        retrieval_status = retrival_container.status("**Context Retrieval**")
+        queried_questions = []
+        rendered_questions = set()
+        def update_retrieval_status():
+            for q in queried_questions:
+                if q in rendered_questions:
+                    continue
+                rendered_questions.add(q)
+                retrieval_status.markdown(f"\n\n`- {q}`")
+        def retrieval_cb(qs):
+            for q in qs:
+                if q not in queried_questions:
+                    queried_questions.append(q)
+            return qs
+        
+        # get the chain with the retrieval callback
+        custom_chain = get_rag_chain(retrieval_cb=retrieval_cb, vectorstore=db.index)
+    
+        if "messages" in st.session_state:
+            chat_history = [convert_message(m) for m in st.session_state.messages[:-1]]
+        else:
+            chat_history = []
+
+        full_response = ""
+        for response in custom_chain.stream(
+            {"input": prompt, "chat_history": chat_history}
+        ):
+            if "output" in response:
+                full_response += response["output"]
+            else:
+                full_response += response.content
+
+            message_placeholder.markdown(full_response + "▌")
+            update_retrieval_status()
+
+        retrieval_status.update(state="complete")
+        message_placeholder.markdown(full_response)
+
+        # Once the response is ready, clear the loading message
+        loading_message.empty()
+
+        # add the full response to the message history
+        st.session_state.messages.append({"role": "assistant", "content": full_response})
