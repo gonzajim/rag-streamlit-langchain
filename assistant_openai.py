@@ -30,6 +30,34 @@ def process_documents():
     if not st.session_state.source_docs:
         st.warning(f"No ha subido documentos, por favor hágalo para poder seguir.")
     else:
+        # Retrieve the file list
+        uploaded_files = st.session_state.source_docs
+        client_files = client.files.list()
+        for file in client_files.data:
+            st.write(f"File: {file.filename}")
+            # Find the file by name
+            filename_to_find = file.filename
+            the_file_id = None
+            file_objects = list(filter(lambda x: x.filename == filename_to_find, uploaded_files.data))
+            if len(file_objects) > 0:
+                the_file_id = file_objects[0].id
+            # Si el archivo ya existe, lo borramos
+            if the_file_id:
+                delete_status = client.files.delete(the_file_id)
+                st.warning(f"Se ha borrado el archivo {filename_to_find} con status: {delete_status}")
+                # Creamos el archivo actualizado
+                file = client.files.create(
+                    file=file,
+                    purpose='assistants'
+                )
+        # Recupero de nuevo la lista de ficheros para asignarla al asistente
+        client_files = client.files.list()
+        updated_assistant = client.beta.assistants.update(
+            assistant.id,
+            tools=[{"type": "retrieval"}],
+            file_ids=client_files,
+            )
+        
         try:
             assistant.corpus.upload(st.session_state.source_docs)
         except Exception as e:
