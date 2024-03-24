@@ -37,7 +37,7 @@ def process_documents():
         # Create a set of filenames in client_files for faster lookup
         client_filenames = {file.filename for file in client_files.data}
 
-        for uploaded_file in uploaded_files.data:
+        for uploaded_file in uploaded_files:
             # Check if the file already exists in client_files
             if uploaded_file.filename in client_filenames:
                 # If the file exists, delete it
