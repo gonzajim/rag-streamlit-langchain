@@ -39,13 +39,13 @@ def process_documents():
 
         for uploaded_file in uploaded_files:
             # Check if the file already exists in client_files
-            if uploaded_file.filename in client_filenames:
+            if uploaded_file.name in client_filenames:
                 # If the file exists, delete it
-                file_objects = list(filter(lambda x: x.filename == uploaded_file.filename, client_files.data))
+                file_objects = list(filter(lambda x: x.filename == uploaded_file.name, client_files.data))
                 if len(file_objects) > 0:
                     the_file_id = file_objects[0].id
                     delete_status = client.files.delete(the_file_id)
-                    st.warning(f"Se ha borrado el archivo {uploaded_file.filename} con status: {delete_status}")
+                    st.warning(f"Se ha borrado el archivo {uploaded_file.name} con status: {delete_status}")
 
             # Create the new file
             new_file = client.files.create(
