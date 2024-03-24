@@ -33,30 +33,37 @@ def process_documents():
         # Retrieve the file list
         uploaded_files = st.session_state.source_docs
         client_files = client.files.list()
-        for file in client_files.data:
-            st.write(f"File: {file.filename}")
-            # Find the file by name
-            filename_to_find = file.filename
-            the_file_id = None
-            file_objects = list(filter(lambda x: x.filename == filename_to_find, uploaded_files.data))
-            if len(file_objects) > 0:
-                the_file_id = file_objects[0].id
-            # Si el archivo ya existe, lo borramos
-            if the_file_id:
-                delete_status = client.files.delete(the_file_id)
-                st.warning(f"Se ha borrado el archivo {filename_to_find} con status: {delete_status}")
-                # Creamos el archivo actualizado
-                file = client.files.create(
-                    file=file,
-                    purpose='assistants'
-                )
-        # Recupero de nuevo la lista de ficheros para asignarla al asistente
+
+        # Create a set of filenames in client_files for faster lookup
+        client_filenames = {file.filename for file in client_files.data}
+
+        for uploaded_file in uploaded_files.data:
+            # Check if the file already exists in client_files
+            if uploaded_file.filename in client_filenames:
+                # If the file exists, delete it
+                file_objects = list(filter(lambda x: x.filename == uploaded_file.filename, client_files.data))
+                if len(file_objects) > 0:
+                    the_file_id = file_objects[0].id
+                    delete_status = client.files.delete(the_file_id)
+                    st.warning(f"Se ha borrado el archivo {uploaded_file.filename} con status: {delete_status}")
+
+            # Create the new file
+            new_file = client.files.create(
+                file=uploaded_file,
+                purpose='assistants'
+            )
+            st.write(f"Se ha creado el archivo {new_file.filename}")
+
+        # Retrieve the updated file list
         client_files = client.files.list()
+
+        # Update the assistant's files
+        file_ids = [file.id for file in client_files.data]
         updated_assistant = client.beta.assistants.update(
             assistant.id,
             tools=[{"type": "retrieval"}],
-            file_ids=client_files,
-            )
+            file_ids=file_ids,
+        )
         
         try:
             assistant.corpus.upload(st.session_state.source_docs)
