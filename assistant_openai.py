@@ -26,6 +26,15 @@ for message in st.session_state.messages:
 def input_fields():
     st.session_state.source_docs = st.file_uploader(label="Suba documentos al corpus", type="pdf", accept_multiple_files=True)
 
+def process_documents():
+    if not st.session_state.source_docs:
+        st.warning(f"No ha subido documentos, por favor hágalo para poder seguir.")
+    else:
+        try:
+            assistant.corpus.upload(st.session_state.source_docs)
+        except Exception as e:
+            st.error(f"Error al subir documentos: {e}")
+
 input_fields()
 st.button("Submit Documents", on_click=process_documents)
 
