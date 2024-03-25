@@ -1,6 +1,7 @@
 import streamlit as st
 from openai import OpenAI
 import time
+import uuid
 
 st.set_page_config(page_title="Recava Engine - OpenAI Assistant", page_icon=":robot:")
 st.title("Recava Chatbot - OpenAI Assistant")
@@ -18,6 +19,9 @@ if "openai_model" not in st.session_state:
 # Initialize chat history
 if "messages" not in st.session_state:
     st.session_state.messages = []
+
+if "session_id" not in st.session_state: # Used to identify each session
+    st.session_state.session_id = str(uuid.uuid4())
 
 # Display chat messages from history on app rerun
 for message in st.session_state.messages:
