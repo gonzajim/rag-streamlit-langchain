@@ -26,6 +26,8 @@ for message in st.session_state.messages:
 def input_fields():
     st.session_state.source_docs = st.file_uploader(label="Suba documentos al corpus", type="pdf", accept_multiple_files=True)
 
+# Define a function to process the uploaded documents
+# and update the assistant's files
 def process_documents():
     if not st.session_state.source_docs:
         st.warning(f"No ha subido documentos, por favor hágalo para poder seguir.")
@@ -61,11 +63,7 @@ def process_documents():
             tools=[{"type": "retrieval"}],
             file_ids=file_ids,
         )
-        
-        try:
-            assistant.corpus.upload(st.session_state.source_docs)
-        except Exception as e:
-            st.error(f"Error al subir documentos: {e}")
+        st.session_state.assistant = updated_assistant
 
 input_fields()
 st.button("Submit Documents", on_click=process_documents)
@@ -74,6 +72,12 @@ st.button("Submit Documents", on_click=process_documents)
 if prompt := st.chat_input("Haga su consulta al asistente de Recava..."):
     # Add user message to chat history
     st.session_state.messages.append({"role": "user", "content": prompt})
+    # Reset the assistant if the user has uploaded new documents
+    if not st.session_state.assistant:
+        st.error("Por favor suba documentos para poder continuar.")
+    # Create a new thread if it doesn't exist
+    if not st.session_state.thread:
+        st.session_state.thread = assistant.beta.threads.create()
     # Display user message in chat message container
     with st.chat_message("user"):
         st.markdown(prompt)
