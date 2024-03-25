@@ -54,11 +54,8 @@ def process_documents():
             )
             st.write(f"Se ha creado el archivo {new_file.filename}")
 
-        # Retrieve the updated file list
-        client_files = client.files.list()
-
         # Update the assistant's files
-        file_ids = [file.id for file in client_files.data]
+        file_ids = [file.id for file in uploaded_files.data]
         updated_assistant = client.beta.assistants.update(
             assistant.id,
             tools=[{"type": "retrieval"}],
