@@ -37,6 +37,8 @@ def process_documents():
         # Create a set of filenames in client_files for faster lookup
         client_filenames = {file.filename for file in client_files.data}
 
+        uploaded_assitant_files = []
+        # Iterate over the uploaded files
         for uploaded_file in uploaded_files:
             # Check if the file already exists in client_files
             if uploaded_file.name in client_filenames:
@@ -45,17 +47,15 @@ def process_documents():
                 if len(file_objects) > 0:
                     the_file_id = file_objects[0].id
                     delete_status = client.files.delete(the_file_id)
-                    st.warning(f"Se ha borrado el archivo {uploaded_file.name} con status: {delete_status}")
 
             # Create the new file
-            new_file = client.files.create(
+            uploaded_assitant_files.append(client.files.create(
                 file=uploaded_file,
                 purpose='assistants'
-            )
-            st.write(f"Se ha creado el archivo {new_file.filename}")
+            ))
 
         # Update the assistant's files
-        file_ids = [file.id for file in uploaded_files.data]
+        file_ids = [file.id for file in uploaded_assitant_files]
         updated_assistant = client.beta.assistants.update(
             assistant.id,
             tools=[{"type": "retrieval"}],
