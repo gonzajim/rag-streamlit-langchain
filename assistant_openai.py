@@ -28,11 +28,6 @@ if "retry_error" not in st.session_state: # Used for error handling
 if "session_id" not in st.session_state: # Used to identify each session
     st.session_state.session_id = str(uuid.uuid4())
 
-# Display chat messages from history on app rerun
-for message in st.session_state.messages:
-    with st.chat_message(message["role"]):
-        st.markdown(message["content"])
-
 def input_fields():
     st.session_state.source_docs = st.file_uploader(label="Suba documentos al corpus", type="pdf", accept_multiple_files=True)
 
