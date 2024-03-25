@@ -16,9 +16,14 @@ st.session_state.assistant = client.beta.assistants.retrieve(st.secrets["OPENAI_
 if "openai_model" not in st.session_state:
     st.session_state["openai_model"] = "gpt-3.5-turbo"
 
-# Initialize chat history
-if "messages" not in st.session_state:
+if "run" not in st.session_state: # Stores the run state of the assistant
+    st.session_state.run = {"status": None}
+
+if "messages" not in st.session_state: # Stores the messages of the assistant
     st.session_state.messages = []
+
+if "retry_error" not in st.session_state: # Used for error handling
+    st.session_state.retry_error = 0
 
 if "session_id" not in st.session_state: # Used to identify each session
     st.session_state.session_id = str(uuid.uuid4())
