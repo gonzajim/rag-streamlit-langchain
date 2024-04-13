@@ -88,7 +88,7 @@ if hasattr(st.session_state.run, 'status') and st.session_state.run.status == "c
     )
 
 # Accept user input
-if prompt := st.chat_input("How can I help you?"):
+if prompt := st.chat_input("¿En qué puedo ayudarte en temas de diligencia debida?"):
     with st.chat_message('user'):
         st.write(prompt)
 
