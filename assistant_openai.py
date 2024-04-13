@@ -79,6 +79,7 @@ st.session_state.thread = client.beta.threads.create(
         'session_id': st.session_state.session_id,
     }
 )
+st.write("El Thread id es: ", st.session_state.thread.id)
 
 # If the run is completed, display the messages
 if hasattr(st.session_state.run, 'status') and st.session_state.run.status == "completed":
@@ -100,6 +101,7 @@ if prompt := st.chat_input("¿En qué puedo ayudarte en temas de diligencia debi
     )
 
 # Do a run to process the messages in the thread
+    st.write("Do a run to process the messages in the thread ......")
     st.session_state.run = client.beta.threads.runs.create(
         thread_id=st.session_state.thread.id,
         assistant_id=st.session_state.assistant.id,
