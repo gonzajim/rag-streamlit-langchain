@@ -131,6 +131,7 @@ if prompt := st.chat_input("¿En qué puedo ayudarte en temas de diligencia debi
             # Handle the 'completed' status
             elif st.session_state.run.status == "completed":
                 # Retrieve the messages from the run
+                st.write("Obteniendo mensajes")
                 messages = client.beta.threads.messages.list(
                     thread_id=st.session_state.thread.id,
                     run_id=st.session_state.run.id,
