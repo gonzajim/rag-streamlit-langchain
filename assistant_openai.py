@@ -115,6 +115,7 @@ if prompt := st.chat_input("¿En qué puedo ayudarte en temas de diligencia debi
     if hasattr(st.session_state.run, 'status'):
         try:
             # Handle the 'running' status
+            st.write("Running ......")
             if st.session_state.run.status == "running":
                 with st.chat_message('assistant'):
                     st.write("Thinking ......")
