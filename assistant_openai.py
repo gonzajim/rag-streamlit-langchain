@@ -14,7 +14,7 @@ st.session_state.assistant = client.beta.assistants.retrieve(st.secrets["OPENAI_
 
 # Set a default model
 if "openai_model" not in st.session_state:
-    st.session_state["openai_model"] = "gpt-3.5-turbo"
+    st.session_state["openai_model"] = "gpt-4.5-turbo"
 
 if "run" not in st.session_state: # Stores the run state of the assistant
     st.session_state.run = {"status": None}
@@ -108,6 +108,9 @@ if prompt := st.chat_input("¿En qué puedo ayudarte en temas de diligencia debi
         time.sleep(1) # Wait 1 second before checking run status
         st.rerun()
 
+    # Initialize a counter for the total number of attempts
+    st.session_state.total_attempts = 0
+
     # Check if 'run' object has 'status' attribute
     if hasattr(st.session_state.run, 'status'):
         try:
@@ -115,17 +118,19 @@ if prompt := st.chat_input("¿En qué puedo ayudarte en temas de diligencia debi
             if st.session_state.run.status == "running":
                 with st.chat_message('assistant'):
                     st.write("Thinking ......")
-                if st.session_state.retry_error < 3:
+                if st.session_state.retry_error < 3 and st.session_state.total_attempts < 10:
                     time.sleep(1)  # Short delay to prevent immediate rerun, adjust as needed
+                    st.session_state.total_attempts += 1
                     st.rerun()
 
             # Handle the 'failed' status
             elif st.session_state.run.status == "failed":
                 st.session_state.retry_error += 1
                 with st.chat_message('assistant'):
-                    if st.session_state.retry_error < 3:
+                    if st.session_state.retry_error < 3 and st.session_state.total_attempts < 10:
                         st.write("Run failed, retrying ......")
                         time.sleep(3)  # Longer delay before retrying
+                        st.session_state.total_attempts += 1
                         st.rerun()
                     else:
                         st.error("FAILED: The OpenAI API is currently processing too many requests. Please try again later ......")
