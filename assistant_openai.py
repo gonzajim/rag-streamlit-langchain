@@ -84,9 +84,14 @@ st.write("El Thread id es: ", st.session_state.thread.id)
 # If the run is completed, display the messages
 if hasattr(st.session_state.run, 'status') and st.session_state.run.status == "completed":
     # Retrieve the list of messages
+    st.write("Obteniendo mensajes")
     st.session_state.messages = client.beta.threads.messages.list(
         thread_id=st.session_state.thread.id
     )
+
+    # Print the last 5 messages
+    for message in st.session_state.messages[-5:]:
+        st.write(message)
 
 # Accept user input
 if prompt := st.chat_input("¿En qué puedo ayudarte en temas de diligencia debida?"):
