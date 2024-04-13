@@ -79,7 +79,6 @@ st.session_state.thread = client.beta.threads.create(
         'session_id': st.session_state.session_id,
     }
 )
-st.write("El Thread id es: ", st.session_state.thread.id)
 
 # If the run is completed, display the messages
 if hasattr(st.session_state.run, 'status') and st.session_state.run.status == "completed":
@@ -106,7 +105,6 @@ if prompt := st.chat_input("¿En qué puedo ayudarte en temas de diligencia debi
     )
 
 # Do a run to process the messages in the thread
-    st.write("Do a run to process the messages in the thread ......")
     st.session_state.run = client.beta.threads.runs.create(
         thread_id=st.session_state.thread.id,
         assistant_id=st.session_state.assistant.id,
@@ -122,7 +120,6 @@ if prompt := st.chat_input("¿En qué puedo ayudarte en temas de diligencia debi
     if hasattr(st.session_state.run, 'status'):
         try:
             # Handle the 'running' status
-            st.write("Running ......")
             if st.session_state.run.status == "running":
                 with st.chat_message('assistant'):
                     st.write("Thinking ......")
@@ -130,6 +127,17 @@ if prompt := st.chat_input("¿En qué puedo ayudarte en temas de diligencia debi
                     time.sleep(1)  # Short delay to prevent immediate rerun, adjust as needed
                     st.session_state.total_attempts += 1
                     st.rerun()
+
+            # Handle the 'completed' status
+            elif st.session_state.run.status == "completed":
+                # Retrieve the messages from the run
+                messages = client.beta.threads.messages.list(
+                    thread_id=st.session_state.thread.id,
+                    run_id=st.session_state.run.id,
+                )
+                # Print the messages
+                for message in messages:
+                    st.write(message)
 
             # Handle the 'failed' status
             elif st.session_state.run.status == "failed":
